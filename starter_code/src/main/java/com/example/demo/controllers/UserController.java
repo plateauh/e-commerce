@@ -2,8 +2,8 @@ package com.example.demo.controllers;
 
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +34,7 @@ public class UserController {
 	@Autowired
 	private BCryptPasswordEncoder bCryptPasswordEncoder;
 
-	public static final Logger log = LoggerFactory.getLogger(UserController.class);
+	public static final Logger log = LogManager.getLogger(UserController.class);
 
 	@GetMapping("/id/{id}")
 	public ResponseEntity<User> findById(@PathVariable Long id) {
@@ -59,9 +59,12 @@ public class UserController {
 	public ResponseEntity<User> createUser(@RequestBody CreateUserRequest createUserRequest) {
 		User user = new User();
 		user.setUsername(createUserRequest.getUsername());
-		if (createUserRequest.getPassword().length() < 7
-				|| !createUserRequest.getPassword().equals(createUserRequest.getConfirmPassword())) {
+		if (createUserRequest.getPassword().length() < 7) {
 			log.error("Password {} is not complex", createUserRequest.getPassword());
+			return ResponseEntity.badRequest().build();
+		}
+		if (!createUserRequest.getPassword().equals(createUserRequest.getConfirmPassword())) {
+			log.error("Password {} doesn't match confirm password {}", createUserRequest.getPassword(), createUserRequest.getConfirmPassword());
 			return ResponseEntity.badRequest().build();
 		}
 		user.setPassword(bCryptPasswordEncoder.encode(createUserRequest.getPassword()));
