@@ -54,7 +54,6 @@ public class OrderController {
 			return ResponseEntity.notFound().build();
 		}
 		log.debug("getting user {}'s orders history...", username);
-		List<UserOrder> orders = orderRepository.findByUser(user);
 		return ResponseEntity.ok(orderRepository.findByUser(user));
 	}
 }
