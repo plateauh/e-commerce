@@ -2,6 +2,8 @@ package com.example.demo.controllers;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,15 +34,25 @@ public class UserController {
 	@Autowired
 	private BCryptPasswordEncoder bCryptPasswordEncoder;
 
+	public static final Logger log = LoggerFactory.getLogger(UserController.class);
+
 	@GetMapping("/id/{id}")
 	public ResponseEntity<User> findById(@PathVariable Long id) {
+		Optional<User> user = userRepository.findById(id);
+		if (!user.isPresent()) {
+			log.error("User with id {} not found", id);
+		}
 		return ResponseEntity.of(userRepository.findById(id));
 	}
 	
 	@GetMapping("/{username}")
 	public ResponseEntity<User> findByUserName(@PathVariable String username) {
 		User user = userRepository.findByUsername(username);
-		return user == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(user);
+		if (user == null) {
+			log.error("User with username {} not found", username);
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(user);
 	}
 	
 	@PostMapping("/create")
@@ -49,6 +61,7 @@ public class UserController {
 		user.setUsername(createUserRequest.getUsername());
 		if (createUserRequest.getPassword().length() < 7
 				|| !createUserRequest.getPassword().equals(createUserRequest.getConfirmPassword())) {
+			log.error("Password {} is not complex", createUserRequest.getPassword());
 			return ResponseEntity.badRequest().build();
 		}
 		user.setPassword(bCryptPasswordEncoder.encode(createUserRequest.getPassword()));
@@ -56,6 +69,7 @@ public class UserController {
 		cartRepository.save(cart);
 		user.setCart(cart);
 		userRepository.save(user);
+		log.info("Created user {} with id {}", user.getUsername(), user.getId());
 		return ResponseEntity.ok(user);
 	}
 	
